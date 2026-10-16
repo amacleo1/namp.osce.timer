@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>OSCE Timer (NAMP)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:#111; color:#fff; margin:0; padding:2rem; }
+    h1 { text-align:center; margin-bottom:1rem; }
+    .settings, .controls { max-width: 640px; margin:0 auto 2rem; background:#1e1e1e; padding:1.5rem; border-radius:12px; }
+    label { display:block; margin-top:1rem; }
+    .row { display:flex; gap:.5rem; align-items:center; margin-top:.5rem; }
+    input[type="number"], input[type="file"] { flex:1; padding:.5rem; border-radius:6px; border:none; background:#2a2a2a; color:#fff; }
+    button { padding:.6rem .9rem; border-radius:8px; border:none; font-size:1rem; cursor:pointer; background:#2f64ff; color:#fff; }
+    button.secondary { background:#3a3a3a; }
+    button.start { background:#2ecc71; color:#0b2015; font-weight:600; }
+    .controls button { width:48%; }
+    #display { text-align:center; font-size:6rem; margin:2rem 0 1rem; font-variant-numeric: tabular-nums; }
+    #phase { text-align:center; font-size:1.8rem; opacity:.9; }
+    .hidden { display:none; }
+  </style>
+</head>
+<body>
+  <h1>OSCE Timer</h1>
+
+  <div class="settings" id="settingsPanel">
+    <label>Number of Stations
+      <input type="number" id="stations" value="10" min="1" />
+    </label>
+    <label>Station Length (minutes)
+      <input type="number" id="stationLength" value="8" min="1" />
+    </label>
+    <label>Warning Time (minutes remaining)
+      <input type="number" id="warningTime" value="2" min="0" />
+    </label>
+    <label>Reading Time (minutes)
+      <input type="number" id="readingTime" value="2" min="0" />
+    </label>
+
+    <label>Enter Room Sound
+      <input type="file" id="entryUpload" accept="audio/*" />
+    </label>
+
+    <label>Warning Sound
+      <input type="file" id="warnEndUpload" accept="audio/*" />
+    </label>
+
+    <label>End Station Sound
+      <input type="file" id="endStationUpload" accept="audio/*" />
+    </label>
+
+    <div class="row" style="justify-content:center; margin-top:1rem;">
+      <button onclick="startOSCE()" class="start">Start OSCE</button>
+    </div>
+  </div>
+
+  <div id="phase">Idle</div>
+  <div id="display">00:00</div>
+
+  <div class="controls">
+    <button onclick="pauseResume()" class="secondary">Pause</button>
+    <button onclick="confirmReset()" class="secondary">Reset</button>
+  </div>
+
+  <audio id="entryAudio" src="sounds/entry_preset.wav"></audio>
+  <audio id="warnEndAudio" src="sounds/warnend_preset.wav"></audio>
+  <audio id="endStationAudio" src="sounds/endstation_preset.wav"></audio>
+
+  <script>
+    let timer;
+    let remaining = 0;
+    let phase = 'idle';
+    let station = 0;
+    let paused = false;
+    let locked = false;
+
+    const display = document.getElementById('display');
+    const phaseLabel = document.getElementById('phase');
+    const entryAudio = document.getElementById('entryAudio');
+    const warnEndAudio = document.getElementById('warnEndAudio');
+    const endStationAudio = document.getElementById('endStationAudio');
+    const settingsPanel = document.getElementById('settingsPanel');
+
+    document.getElementById('entryUpload').addEventListener('change', e => {
+      const f = e.target.files?.[0];
+      if (f) entryAudio.src = URL.createObjectURL(f);
+    });
+    document.getElementById('warnEndUpload').addEventListener('change', e => {
+      const f = e.target.files?.[0];
+      if (f) warnEndAudio.src = URL.createObjectURL(f);
+    });
+    document.getElementById('endStationUpload').addEventListener('change', e => {
+      const f = e.target.files?.[0];
+      if (f) endStationAudio.src = URL.createObjectURL(f);
+    });
+
+    function playEntry() { entryAudio.currentTime = 0; entryAudio.play(); }
+    function playWarnEnd() { warnEndAudio.currentTime = 0; warnEndAudio.play(); }
+    function playEndStation() { endStationAudio.currentTime = 0; endStationAudio.play(); }
+
+    function startOSCE() {
+      resetAll();
+      locked = true;
+      settingsPanel.classList.add('hidden');
+      station = 1;
+      startReading();
+    }
+
+    function startReading() {
+      phase = 'Reading';
+      phaseLabel.textContent = `Station ${station}: Reading Time`;
+      remaining = parseInt(document.getElementById('readingTime').value || '0', 10) * 60;
+
+      runTimer(startStation);
+    }
+
+    function startStation() {
+      phase = 'Station';
+      phaseLabel.textContent = `Station ${station}: Enter Room`;
+      playEntry();
+
+      phaseLabel.textContent = `Station ${station}: In Progress`;
+
+      remaining = parseInt(document.getElementById('stationLength').value || '0', 10) * 60;
+      const warnAt = parseInt(document.getElementById('warningTime').value || '0', 10) * 60;
+
+      runTimer(endStation, warnAt);
+    }
+
+    function endStation() {
+      playEndStation();
+      station++;
+
+      if (station > parseInt(document.getElementById('stations').value || '0', 10)) {
+        phaseLabel.textContent = 'OSCE Complete';
+        display.textContent = '00:00';
+        return;
+      }
+
+      startReading();
+    }
+
+    function runTimer(onComplete, warningAt) {
+      clearInterval(timer);
+      updateDisplay();
+
+      timer = setInterval(() => {
+        if (!paused) {
+          remaining--;
+          updateDisplay();
+
+          if (warningAt && remaining === warningAt) {
+            playWarnEnd();
+          }
+
+          if (remaining <= 0) {
+            clearInterval(timer);
+            onComplete();
+          }
+        }
+      }, 1000);
+    }
+
+    function updateDisplay() {
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
+      display.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    function pauseResume() {
+      if (!locked) return;
+      paused = !paused;
+    }
+
+    function confirmReset() {
+      if (!locked) return resetAll();
+      if (confirm('Are you sure you want to reset the OSCE?')) {
+        resetAll();
+        settingsPanel.classList.remove('hidden');
+        locked = false;
+      }
+    }
+
+    function resetAll() {
+      clearInterval(timer);
+      station = 0;
+      phase = 'idle';
+      remaining = 0;
+      phaseLabel.textContent = 'Idle';
+      display.textContent = '00:00';
+      paused = false;
+    }
+  </script>
+</body>
+</html>
