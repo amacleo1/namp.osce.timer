@@ -1,102 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>OSCE Timer (NAMP)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSCE Timer (NAMP)</title>
 
-  <style>
-    body{
-      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      background:#111;
-      color:#fff;
-      margin:0;
-      padding:2rem;
-    }
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: white;
+  margin: 0;
+  padding: 20px;
+}
 
-    h1{
-      text-align:center;
-      margin-bottom:1rem;
-    }
+h1 {
+  text-align: center;
+}
 
-    .settings,.controls{
-      max-width:640px;
-      margin:0 auto 2rem;
-      background:#1e1e1e;
-      padding:1.5rem;
-      border-radius:12px;
-    }
+.settings,
+.controls {
+  max-width: 600px;
+  margin: 20px auto;
+  background: #1e1e1e;
+  padding: 20px;
+  border-radius: 10px;
+}
 
-    label{
-      display:block;
-      margin-top:1rem;
-    }
+label {
+  display: block;
+  margin-top: 12px;
+}
 
-    .row{
-      display:flex;
-      gap:.5rem;
-      align-items:center;
-      margin-top:.5rem;
-      justify-content:center;
-      flex-wrap:wrap;
-    }
+input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  box-sizing: border-box;
+}
 
-    input[type="number"]{
-      width:100%;
-      padding:.5rem;
-      border-radius:6px;
-      border:none;
-      background:#2a2a2a;
-      color:#fff;
-      box-sizing:border-box;
-    }
+button {
+  padding: 10px 16px;
+  margin: 5px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
 
-    button{
-      padding:.6rem .9rem;
-      border:none;
-      border-radius:8px;
-      font-size:1rem;
-      cursor:pointer;
-      background:#2f64ff;
-      color:#fff;
-    }
+.start {
+  background: #2ecc71;
+}
 
-    button.secondary{
-      background:#3a3a3a;
-    }
+.secondary {
+  background: #444;
+  color: white;
+}
 
-    button.start{
-      background:#2ecc71;
-      color:#0b2015;
-      font-weight:600;
-    }
+#phase {
+  text-align: center;
+  font-size: 2rem;
+  margin-top: 20px;
+}
 
-    .controls{
-      display:flex;
-      gap:1rem;
-    }
+#display {
+  text-align: center;
+  font-size: 6rem;
+  margin-top: 15px;
+}
 
-    .controls button{
-      flex:1;
-    }
-
-    #display{
-      text-align:center;
-      font-size:6rem;
-      margin:2rem 0 1rem;
-      font-variant-numeric:tabular-nums;
-    }
-
-    #phase{
-      text-align:center;
-      font-size:1.8rem;
-      opacity:.9;
-    }
-
-    .hidden{
-      display:none;
-    }
-  </style>
+.hidden {
+  display: none;
+}
+</style>
 </head>
 
 <body>
@@ -116,7 +92,7 @@
   </label>
 
   <label>
-    Warning Time (minutes remaining)
+    Warning Time Remaining (minutes)
     <input type="number" id="warningTime" value="2" min="0">
   </label>
 
@@ -125,16 +101,14 @@
     <input type="number" id="readingTime" value="2" min="0">
   </label>
 
-  <div class="row" style="margin-top:1.5rem;">
+  <div style="margin-top:15px;">
     <button type="button" onclick="playEntry()">Test Entry</button>
-    <button type="button" onclick="playWarnEnd()">Test Warning</button>
-    <button type="button" onclick="playEndStation()">Test End</button>
+    <button type="button" onclick="playWarning()">Test Warning</button>
+    <button type="button" onclick="playEnd()">Test End</button>
   </div>
 
-  <div class="row" style="margin-top:1rem;">
-    <button onclick="startOSCE()" class="start">
-      Start OSCE
-    </button>
+  <div style="margin-top:15px;">
+    <button class="start" type="button" onclick="startOSCE()">Start OSCE</button>
   </div>
 
 </div>
@@ -143,143 +117,127 @@
 <div id="display">00:00</div>
 
 <div class="controls">
-  <button onclick="pauseResume()" class="secondary">Pause</button>
-  <button onclick="confirmReset()" class="secondary">Reset</button>
+  <button class="secondary" type="button" onclick="pauseResume()">Pause</button>
+  <button class="secondary" type="button" onclick="resetTimer()">Reset</button>
 </div>
 
-sounds/entry.wav</audio>
-<audio id="warnEndAudio" src="sounds/warningudio>
-
-<script>
-
-let timer;
+<!-- Audio Files -->
+<audio id="entryAudio" >
+<audio id="warningAudio" preload="auto" src="sounds/warning.wav"></audionull;
 let remaining = 0;
-let station = 0;
 let paused = false;
-let locked = false;
+let station = 0;
 
-const display = document.getElementById('display');
-const phaseLabel = document.getElementById('phase');
-const settingsPanel = document.getElementById('settingsPanel');
+const display = document.getElementById("display");
+const phaseLabel = document.getElementById("phase");
 
-const entryAudio = document.getElementById('entryAudio');
-const warnEndAudio = document.getElementById('warnEndAudio');
-const endStationAudio = document.getElementById('endStationAudio');
+const entryAudio = document.getElementById("entryAudio");
+const warningAudio = document.getElementById("warningAudio");
+const endAudio = document.getElementById("endAudio");
 
-function playEntry(){
+function playEntry() {
   entryAudio.currentTime = 0;
-  entryAudio.play().catch(console.error);
+  entryAudio.play();
 }
 
-function playWarnEnd(){
-  warnEndAudio.currentTime = 0;
-  warnEndAudio.play().catch(console.error);
+function playWarning() {
+  warningAudio.currentTime = 0;
+  warningAudio.play();
 }
 
-function playEndStation(){
-  endStationAudio.currentTime = 0;
-  endStationAudio.play().catch(console.error);
+function playEnd() {
+  endAudio.currentTime = 0;
+  endAudio.play();
 }
 
-async function startOSCE(){
+function updateDisplay() {
+  const minutes = Math.floor(remaining / 60);
+  const seconds = remaining % 60;
 
-  try{
-    await entryAudio.play();
-    entryAudio.pause();
-    entryAudio.currentTime = 0;
+  display.textContent =
+    String(minutes).padStart(2, "0") +
+    ":" +
+    String(seconds).padStart(2, "0");
+}
 
-    await warnEndAudio.play();
-    warnEndAudio.pause();
-    warnEndAudio.currentTime = 0;
-
-    await endStationAudio.play();
-    endStationAudio.pause();
-    endStationAudio.currentTime = 0;
-  }
-  catch(e){
-    console.log("Audio initialization skipped", e);
-  }
-
-  resetAll();
-
-  locked = true;
-  settingsPanel.classList.add('hidden');
-
+function startOSCE() {
+  clearInterval(timer);
+  paused = false;
   station = 1;
-  startReading();
+  startReadingPhase();
 }
 
-function startReading(){
-
+function startReadingPhase() {
   phaseLabel.textContent =
-    `Station ${station}: Reading Time`;
+    "Station " + station + ": Reading Time";
 
   remaining =
-    parseInt(document.getElementById('readingTime').value || '0', 10) * 60;
+    Number(document.getElementById("readingTime").value) * 60;
 
-  runTimer(startStation);
+  runTimer(startStationPhase);
 }
 
-function startStation(){
+function startStationPhase() {
 
   phaseLabel.textContent =
-    `Station ${station}: Enter Room`;
+    "Station " + station + ": Enter Room";
 
   playEntry();
 
   setTimeout(() => {
 
     phaseLabel.textContent =
-      `Station ${station}: In Progress`;
+      "Station " + station + ": In Progress";
 
     remaining =
-      parseInt(document.getElementById('stationLength').value || '0', 10) * 60;
+      Number(document.getElementById("stationLength").value) * 60;
 
-    const warnAt =
-      parseInt(document.getElementById('warningTime').value || '0', 10) * 60;
-
-    runTimer(endStation, warnAt);
+    runTimer(endStation);
 
   }, 2000);
 }
 
-function endStation(){
+function endStation() {
 
-  playEndStation();
+  playEnd();
 
   station++;
 
-  if (station >
-      parseInt(document.getElementById('stations').value || '0', 10)){
+  const totalStations =
+    Number(document.getElementById("stations").value);
 
-    phaseLabel.textContent = 'OSCE Complete';
-    display.textContent = '00:00';
+  if (station > totalStations) {
     clearInterval(timer);
+    phaseLabel.textContent = "OSCE Complete";
+    display.textContent = "00:00";
     return;
   }
 
-  startReading();
+  startReadingPhase();
 }
 
-function runTimer(onComplete, warningAt){
+function runTimer(onComplete) {
 
   clearInterval(timer);
+
+  const warningSeconds =
+    Number(document.getElementById("warningTime").value) * 60;
 
   updateDisplay();
 
   timer = setInterval(() => {
 
-    if(paused) return;
+    if (paused) return;
 
     remaining--;
 
-    updateDisplay();
-
-    if (warningAt && remaining === warningAt){
-      playWarnEnd();
+    if (remaining === warningSeconds && warningSeconds > 0) {
+      playWarning();
     }
 
-    if (remaining <= 0){
+    updateDisplay();
+
+    if (remaining <= 0) {
       clearInterval(timer);
       onComplete();
     }
@@ -287,51 +245,21 @@ function runTimer(onComplete, warningAt){
   }, 1000);
 }
 
-function updateDisplay(){
-
-  const m = Math.floor(remaining / 60);
-  const s = remaining % 60;
-
-  display.textContent =
-    `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-}
-
-function pauseResume(){
-
-  if(!locked) return;
-
+function pauseResume() {
   paused = !paused;
 }
 
-function confirmReset(){
-
-  if(!locked){
-    resetAll();
-    return;
-  }
-
-  if(confirm('Are you sure you want to reset the OSCE?')){
-
-    resetAll();
-
-    locked = false;
-
-    settingsPanel.classList.remove('hidden');
-  }
-}
-
-function resetAll(){
+function resetTimer() {
 
   clearInterval(timer);
 
   station = 0;
-  remaining = 0;
   paused = false;
+  remaining = 0;
 
-  phaseLabel.textContent = 'Idle';
-  display.textContent = '00:00';
+  phaseLabel.textContent = "Idle";
+  display.textContent = "00:00";
 }
-
 </script>
 
 </body>
