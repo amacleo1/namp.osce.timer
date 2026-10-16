@@ -4,21 +4,14 @@
 
 <h1>Sound Test</h1>
 
-<button onclick="playEntry()">Entry</button>
-<button onclick="playWarning()">Warning</button>
-<button onclick="playEnd()">End</button>
+<button onclick="test('entry')">Entry</button>
+<button onclick="test('warning')">Warning</button>
+<button onclick="test('end')">End</button>
 
-<audio id="entryAudio" src="sounds/entry.av</audio>
-<audio id="endAudio" src="sounds/end.wav" playEntry() {
-  document.getElementById("entryAudio").play();
-}
-
-function playWarning() {
-  document.getElementById("warningAudio").play();
-}
-
-function playEnd() {
-  document.getElementById("endAudio").play();
+<script>
+function test(name) {
+  const audio = new Audio('sounds/' + name + '.wav');
+  audio.play();
 }
 </script>
 
