@@ -1,266 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OSCE Timer (NAMP)</title>
-
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background: #111;
-  color: white;
-  margin: 0;
-  padding: 20px;
-}
-
-h1 {
-  text-align: center;
-}
-
-.settings,
-.controls {
-  max-width: 600px;
-  margin: 20px auto;
-  background: #1e1e1e;
-  padding: 20px;
-  border-radius: 10px;
-}
-
-label {
-  display: block;
-  margin-top: 12px;
-}
-
-input {
-  width: 100%;
-  padding: 8px;
-  margin-top: 4px;
-  box-sizing: border-box;
-}
-
-button {
-  padding: 10px 16px;
-  margin: 5px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.start {
-  background: #2ecc71;
-}
-
-.secondary {
-  background: #444;
-  color: white;
-}
-
-#phase {
-  text-align: center;
-  font-size: 2rem;
-  margin-top: 20px;
-}
-
-#display {
-  text-align: center;
-  font-size: 6rem;
-  margin-top: 15px;
-}
-
-.hidden {
-  display: none;
-}
-</style>
+<title>Sound Test</title>
 </head>
-
 <body>
 
-<h1>OSCE Timer</h1>
+<h1>OSCE Sound Test</h1>
 
-<div class="settings" id="settingsPanel">
+<button onclick="playEntry()">Entry</button>
+<button onclick="playWarning()">Warning</button>
+<button onclick="playEnd()">End</button>
 
-  <label>
-    Number of Stations
-    <input type="number" id="stations" value="10" min="1">
-  </label>
+<audio idtry.wav</audio>
+<audio id="warningAudio" src="sounds/warningudio>
 
-  <label>
-    Station Length (minutes)
-    <input type="number" id="stationLength" value="8" min="1">
-  </label>
-
-  <label>
-    Warning Time Remaining (minutes)
-    <input type="number" id="warningTime" value="2" min="0">
-  </label>
-
-  <label>
-    Reading Time (minutes)
-    <input type="number" id="readingTime" value="2" min="0">
-  </label>
-
-  <div style="margin-top:15px;">
-    <button type="button" onclick="playEntry()">Test Entry</button>
-    <button type="button" onclick="playWarning()">Test Warning</button>
-    <button type="button" onclick="playEnd()">Test End</button>
-  </div>
-
-  <div style="margin-top:15px;">
-    <button class="start" type="button" onclick="startOSCE()">Start OSCE</button>
-  </div>
-
-</div>
-
-<div id="phase">Idle</div>
-<div id="display">00:00</div>
-
-<div class="controls">
-  <button class="secondary" type="button" onclick="pauseResume()">Pause</button>
-  <button class="secondary" type="button" onclick="resetTimer()">Reset</button>
-</div>
-
-<!-- Audio Files -->
-<audio id="entryAudio" >
-<audio id="warningAudio" preload="auto" src="sounds/warning.wav"></audionull;
-let remaining = 0;
-let paused = false;
-let station = 0;
-
-const display = document.getElementById("display");
-const phaseLabel = document.getElementById("phase");
-
-const entryAudio = document.getElementById("entryAudio");
-const warningAudio = document.getElementById("warningAudio");
-const endAudio = document.getElementById("endAudio");
-
+<script>
 function playEntry() {
-  entryAudio.currentTime = 0;
-  entryAudio.play();
+  document.getElementById("entryAudio").play();
 }
 
 function playWarning() {
-  warningAudio.currentTime = 0;
-  warningAudio.play();
+  document.getElementById("warningAudio").play();
 }
 
 function playEnd() {
-  endAudio.currentTime = 0;
-  endAudio.play();
-}
-
-function updateDisplay() {
-  const minutes = Math.floor(remaining / 60);
-  const seconds = remaining % 60;
-
-  display.textContent =
-    String(minutes).padStart(2, "0") +
-    ":" +
-    String(seconds).padStart(2, "0");
-}
-
-function startOSCE() {
-  clearInterval(timer);
-  paused = false;
-  station = 1;
-  startReadingPhase();
-}
-
-function startReadingPhase() {
-  phaseLabel.textContent =
-    "Station " + station + ": Reading Time";
-
-  remaining =
-    Number(document.getElementById("readingTime").value) * 60;
-
-  runTimer(startStationPhase);
-}
-
-function startStationPhase() {
-
-  phaseLabel.textContent =
-    "Station " + station + ": Enter Room";
-
-  playEntry();
-
-  setTimeout(() => {
-
-    phaseLabel.textContent =
-      "Station " + station + ": In Progress";
-
-    remaining =
-      Number(document.getElementById("stationLength").value) * 60;
-
-    runTimer(endStation);
-
-  }, 2000);
-}
-
-function endStation() {
-
-  playEnd();
-
-  station++;
-
-  const totalStations =
-    Number(document.getElementById("stations").value);
-
-  if (station > totalStations) {
-    clearInterval(timer);
-    phaseLabel.textContent = "OSCE Complete";
-    display.textContent = "00:00";
-    return;
-  }
-
-  startReadingPhase();
-}
-
-function runTimer(onComplete) {
-
-  clearInterval(timer);
-
-  const warningSeconds =
-    Number(document.getElementById("warningTime").value) * 60;
-
-  updateDisplay();
-
-  timer = setInterval(() => {
-
-    if (paused) return;
-
-    remaining--;
-
-    if (remaining === warningSeconds && warningSeconds > 0) {
-      playWarning();
-    }
-
-    updateDisplay();
-
-    if (remaining <= 0) {
-      clearInterval(timer);
-      onComplete();
-    }
-
-  }, 1000);
-}
-
-function pauseResume() {
-  paused = !paused;
-}
-
-function resetTimer() {
-
-  clearInterval(timer);
-
-  station = 0;
-  paused = false;
-  remaining = 0;
-
-  phaseLabel.textContent = "Idle";
-  display.textContent = "00:00";
+  document.getElementById("endAudio").play();
 }
 </script>
 
 </body>
 </html>
+  
