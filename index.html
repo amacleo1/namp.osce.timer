@@ -1,19 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSCE Timer</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#111;color:#fff;text-align:center}
+.screen{max-width:700px;margin:20px auto;padding:20px}
+input{width:100%;padding:10px;margin:5px 0;box-sizing:border-box}
+button{padding:10px 16px;margin:5px;border:none;border-radius:8px;cursor:pointer}
+#timer{font-size:8rem;margin-top:20px}
+#stationDisplay{font-size:2.5rem;margin-top:20px}
+#phase{font-size:2rem;margin-top:10px}
+.hidden{display:none}
+#paused{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;font-size:8rem;color:red;font-weight:bold}
+</style>
+</head>
 <body>
-
-<h1>Sound Test</h1>
-
-<button onclick="test('entry')">Entry</button>
-<button onclick="test('warning')">Warning</button>
-<button onclick="test('end')">End</button>
-
+<div id="setup" class="screen">
+<h1>OSCE Timer</h1>
+<label>Number of Stations<input id="stations" type="number" value="10"></label>
+<label>Reading Time (minutes)<input id="readingTime" type="number" value="2"></label>
+<label>Station Length (minutes)<input id="stationLength" type="number" value="8"></label>
+<label>Warning Time Remaining (minutes)<input id="warningTime" type="number" value="2"></label>
+<div>
+<button onclick="playSound('entry')">Test Entry</button>
+<button onclick="playSound('warning')">Test Warning</button>
+<button onclick="playSound('end')">Test End</button>
+</div>
+<button onclick="startOSCE()">Start OSCE</button>
+</div>
+<div id="run" class="screen hidden">
+<div id="stationDisplay"></div>
+<div id="phase"></div>
+<div id="timer">00:00</div>
+<button onclick="togglePause()">Pause</button>
+<button onclick="resetOSCE()">Reset</button>
+<button onclick="document.documentElement.requestFullscreen()">Full Screen</button>
+</div>
+<div id="paused">PAUSED</div>
 <script>
-function test(name) {
-  const audio = new Audio('sounds/' + name + '.wav');
-  audio.play();
-}
+let t=null,remaining=0,station=1,paused=false,total=0;
+function playSound(n){new Audio('sounds/'+n+'.wav').play();}
+function fmt(s){let m=Math.floor(s/60);let ss=s%60;return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0');}
+function update(){document.getElementById('timer').textContent=fmt(remaining);}
+function startOSCE(){if(!confirm('Start OSCE?')) return;total=+stations.value;station=1;setup.classList.add('hidden');run.classList.remove('hidden');startReading();}
+function startReading(){phase.textContent='Reading Time';stationDisplay.textContent='Station '+station+' of '+total;remaining=(+readingTime.value)*60;runTimer(startStation);}
+function startStation(){playSound('entry');phase.textContent='In Progress';remaining=(+stationLength.value)*60;runTimer(endStation,(+warningTime.value)*60);}
+function endStation(){playSound('end');station++;if(station>total){phase.textContent='OSCE Complete';timer.textContent='00:00';return;}startReading();}
+function runTimer(done,warn){clearInterval(t);update();t=setInterval(()=>{if(paused)return;remaining--;if(warn&&remaining===warn)playSound('warning');update();if(remaining<=0){clearInterval(t);done();}},1000);}
+function togglePause(){paused=!paused;document.getElementById('paused').style.display=paused?'flex':'none';}
+function resetOSCE(){clearInterval(t);paused=false;document.getElementById('paused').style.display='none';run.classList.add('hidden');setup.classList.remove('hidden');timer.textContent='00:00';phase.textContent='';stationDisplay.textContent='';}
 </script>
-
-</body>
-</html>
+</body></html>
